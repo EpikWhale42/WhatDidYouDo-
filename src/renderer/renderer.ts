@@ -8,10 +8,60 @@ const checkinBridge = (window as any).api as {
   onAnswer: (callback: (answer: string) => void) => void
 }
 
+function inlineMd(text: string): string {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+}
+
+function renderMarkdown(text: string): string {
+  const lines = text.split('\n')
+  const out: string[] = []
+  let inUl = false
+  let inOl = false
+
+  const closeList = () => {
+    if (inUl) { out.push('</ul>'); inUl = false }
+    if (inOl) { out.push('</ol>'); inOl = false }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+
+    if (/^###\s/.test(line))      { closeList(); out.push(`<h3>${inlineMd(line.slice(4))}</h3>`); continue }
+    if (/^##\s/.test(line))       { closeList(); out.push(`<h2>${inlineMd(line.slice(3))}</h2>`); continue }
+    if (/^#\s/.test(line))        { closeList(); out.push(`<h1>${inlineMd(line.slice(2))}</h1>`); continue }
+
+    const ulMatch = line.match(/^([•\-\*])\s(.*)/)
+    if (ulMatch) {
+      if (!inUl) { closeList(); out.push('<ul>'); inUl = true }
+      out.push(`<li>${inlineMd(ulMatch[2])}</li>`)
+      continue
+    }
+
+    const olMatch = line.match(/^\d+\.\s(.*)/)
+    if (olMatch) {
+      if (!inOl) { closeList(); out.push('<ol>'); inOl = true }
+      out.push(`<li>${inlineMd(olMatch[1])}</li>`)
+      continue
+    }
+
+    closeList()
+    if (line.trim() === '') { out.push('<br>'); continue }
+    out.push(`<p>${inlineMd(line)}</p>`)
+  }
+
+  closeList()
+  return out.join('')
+}
+
 const questionEl  = document.getElementById('question') as HTMLElement
 const subtitleEl  = document.getElementById('subtitle') as HTMLElement
 const input       = document.getElementById('input') as HTMLTextAreaElement
-const skeleton    = document.getElementById('skeleton') as HTMLElement
+const skeleton      = document.getElementById('skeleton') as HTMLElement
+const answerDisplay = document.getElementById('answer-display') as HTMLElement
 const submitBtn   = document.getElementById('submit') as HTMLButtonElement
 const dismissBtn  = document.getElementById('dismiss') as HTMLButtonElement
 const settingsBtn = document.getElementById('settings') as HTMLButtonElement
@@ -45,6 +95,7 @@ function deactivateAskMode() {
 function setMode(mode: Mode) {
   if (mode === 'normal') {
     input.style.display = ''
+    answerDisplay.classList.remove('visible')
     skeleton.classList.remove('visible')
     input.readOnly = false
     submitBtn.textContent = 'Log it'
@@ -54,17 +105,18 @@ function setMode(mode: Mode) {
     deactivateAskMode()
   } else if (mode === 'loading') {
     input.style.display = 'none'
+    answerDisplay.classList.remove('visible')
     skeleton.classList.add('visible')
     submitBtn.textContent = 'Searching...'
     submitBtn.disabled = true
     dismissBtn.style.display = 'none'
     subtitleEl.textContent = 'Searching your logs...'
   } else if (mode === 'answered') {
-    input.style.display = ''
+    input.style.display = 'none'
+    answerDisplay.classList.add('visible')
     skeleton.classList.remove('visible')
     cmdChipRow.classList.remove('visible')
     inputMode = 'normal'
-    input.readOnly = true
     submitBtn.textContent = 'Done'
     submitBtn.disabled = false
     dismissBtn.style.display = 'none'
@@ -157,7 +209,7 @@ checkinBridge.onQuestion((question: string) => {
 })
 
 checkinBridge.onAnswer((answer: string) => {
-  input.value = answer
+  answerDisplay.innerHTML = renderMarkdown(answer)
   setMode('answered')
 })
 

@@ -15,6 +15,7 @@ export interface Settings {
   snoozeUntil: number // unix ms timestamp, 0 = not snoozed
   apiKey: string
   model: string
+  githubToken: string
 }
 
 const DEFAULTS: Settings = {
@@ -23,6 +24,7 @@ const DEFAULTS: Settings = {
   snoozeUntil: 0,
   apiKey: '',
   model: 'openai/gpt-4o-mini',
+  githubToken: '',
 }
 
 export function loadSettings(): Settings {

@@ -22,4 +22,12 @@ contextBridge.exposeInMainWorld('api', {
   openSettings: () => ipcRenderer.send('open-settings'),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (patch: Record<string, unknown>) => ipcRenderer.send('save-settings', patch),
+  testGitHub: () => ipcRenderer.invoke('test-github'),
+
+  // GitHub OAuth Device Flow
+  startGitHubAuth: () => ipcRenderer.invoke('github-device-start'),
+  cancelGitHubAuth: () => ipcRenderer.send('github-device-cancel'),
+  disconnectGitHub: () => ipcRenderer.send('github-disconnect'),
+  onGitHubConnected: (cb: () => void) => ipcRenderer.on('github-connected', cb),
+  onGitHubAuthError: (cb: (msg: string) => void) => ipcRenderer.on('github-auth-error', (_e, msg) => cb(msg)),
 })

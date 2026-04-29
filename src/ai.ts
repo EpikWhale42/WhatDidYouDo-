@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { loadSettings } from './settings'
+import { fetchRecentGitHubActivity, fetchGitHubContext } from './github'
 
 const LOG_DIR = path.join(os.homedir(), 'Documents', 'WhatDidYouDo-Logs')
 
@@ -20,8 +21,11 @@ function readRecentLogs(days = 30): string {
 }
 
 export async function summarizeLogs(hours?: number): Promise<string> {
-  const logs = readRecentLogs(hours ? Math.ceil(hours / 24) + 1 : 1)
-  if (!logs.trim()) return "No logs found yet. Answer a few check-ins first."
+  const activityHours = hours ?? 24
+  const [logs, githubContext] = await Promise.all([
+    Promise.resolve(readRecentLogs(hours ? Math.ceil(hours / 24) + 1 : 1)),
+    fetchGitHubContext(activityHours),
+  ])
 
   const now = new Date()
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -29,20 +33,27 @@ export async function summarizeLogs(hours?: number): Promise<string> {
     ? `the last ${hours} hour${hours === 1 ? '' : 's'} (current time: ${timeStr})`
     : `today so far (current time: ${timeStr})`
 
-  const system = `You are a personal productivity assistant. Summarize the user's work for ${scope} based on their logs.
+  const system = `You are a personal productivity assistant. Summarize the user's work for ${scope} based on their logs and GitHub activity.
 
 Format as a concise standup-style bullet list:
-• What was completed
-• What's still in progress
+• What was completed (include merged/closed PRs from GitHub if present)
+• What's still in progress (include open PRs from GitHub if present)
 • Any blockers or next steps (only if mentioned)
 
-Use the actual task names from the logs. 3–6 bullets max. No preamble or sign-off.`
+Use actual task names, PR numbers, and repo names. 3–6 bullets max. No preamble or sign-off.`
+
+  const context = [
+    logs.trim() ? `Work logs:\n${logs}` : '',
+    githubContext ? `GitHub:\n${githubContext}` : '',
+  ].filter(Boolean).join('\n\n---\n\n')
+
+  if (!context.trim()) return "No logs or GitHub activity found yet."
 
   try {
     const summary = await callOpenRouter([
       { role: 'system', content: system },
-      { role: 'user', content: `Logs:\n${logs}` },
-    ], 350)
+      { role: 'user', content: context },
+    ], 400)
     return summary.trim()
   } catch (e) {
     console.error('summarizeLogs failed:', e)
@@ -51,24 +62,40 @@ Use the actual task names from the logs. 3–6 bullets max. No preamble or sign-
 }
 
 export async function answerQuery(question: string): Promise<string> {
-  const logs = readRecentLogs(30)
-  if (!logs.trim()) return "I don't have any logs to search yet. Answer a few check-ins first."
+  const [logs, githubContext] = await Promise.all([
+    Promise.resolve(readRecentLogs(30)),
+    fetchGitHubContext(168), // last 7 days of events + full PR list
+  ])
 
-  const system = `You are a personal memory assistant. You have access to the user's work logs from the past 30 days — both their own words and structured agent notes.
+  const hasLogs = logs.trim()
+  const hasGitHub = githubContext.trim()
 
-Answer the user's question based only on what's in the logs. Be specific: mention dates and times when relevant. If the logs don't contain enough information to answer, say so honestly.
+  if (!hasLogs && !hasGitHub) {
+    return "I don't have any logs or GitHub data yet. Answer a few check-ins and make sure your GitHub token is set in Settings."
+  }
 
-Keep your answer concise and direct. No preamble.`
+  const system = `You are a personal work assistant with access to:
+1. The user's work logs from the past 30 days (check-in notes + AI-structured summaries)
+2. Their GitHub data — open PRs, closed/merged PRs, recent commits, reviews, and comments
+
+Answer the question using all available data. Be specific: mention PR numbers, repo names, dates, and times when relevant. If the data doesn't contain enough to answer, say so honestly.
+
+Concise and direct. No preamble.`
+
+  const context = [
+    hasLogs   ? `Work logs (last 30 days):\n${logs}` : '',
+    hasGitHub ? `GitHub data:\n${githubContext}` : '',
+  ].filter(Boolean).join('\n\n---\n\n')
 
   try {
     const answer = await callOpenRouter([
       { role: 'system', content: system },
-      { role: 'user', content: `Logs:\n${logs}\n\nQuestion: ${question}` },
-    ], 400)
+      { role: 'user', content: `${context}\n\nQuestion: ${question}` },
+    ], 500)
     return answer.trim()
   } catch (e) {
     console.error('answerQuery failed:', e)
-    return 'Something went wrong while searching your logs. Check your API key in Settings.'
+    return 'Something went wrong while searching. Check your API key in Settings.'
   }
 }
 
@@ -130,7 +157,8 @@ Rules:
 - Do NOT start with "Hey" or hollow phrases like "Great job"
 - Output ONLY the question, nothing else`
 
-  const context = `Today's user log:\n${userLog || '(no entries yet)'}\n\nAgent tracking notes:\n${agentLog || '(none yet)'}`
+  const githubActivity = await fetchRecentGitHubActivity(1)
+  const context = `Today's user log:\n${userLog || '(no entries yet)'}\n\nAgent tracking notes:\n${agentLog || '(none yet)'}${githubActivity ? `\n\n${githubActivity}` : ''}`
 
   try {
     const question = await callOpenRouter(
@@ -185,10 +213,12 @@ Snooze examples:
 Be specific. Output only the formatted note.`
 
     try {
+      const githubActivity = await fetchRecentGitHubActivity(1)
+      const userContent = `Question: "${question}"\nResponse: "${answer}"${githubActivity ? `\n\n${githubActivity}` : ''}`
       agentNote = await callOpenRouter(
         [
           { role: 'system', content: system },
-          { role: 'user', content: `Question: "${question}"\nResponse: "${answer}"` },
+          { role: 'user', content: userContent },
         ],
         200
       )

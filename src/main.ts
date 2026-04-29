@@ -9,6 +9,7 @@ import {
 import * as fs from 'fs'
 import * as os from 'os'
 import { generateQuestion, processResponse, getAgentLogPath, answerQuery, summarizeLogs } from './ai'
+import { testGitHubConnection, startDeviceFlow, pollDeviceFlow, resetGitHubCache } from './github'
 import { loadSettings, saveSettings } from './settings'
 
 let tray: Tray | null = null
@@ -118,7 +119,7 @@ function openSettingsWindow() {
     settingsWindow.focus()
     return
   }
-  settingsWindow = makeWindow({ width: 460, height: 400 })
+  settingsWindow = makeWindow({ width: 460, height: 480 })
   settingsWindow.loadFile(path.join(__dirname, 'renderer', 'settings.html'))
   settingsWindow.on('closed', () => { settingsWindow = null })
 }
@@ -232,6 +233,50 @@ ipcMain.on('summarize-query', async (_event, hours: number | undefined) => {
 
 ipcMain.on('open-settings', openSettingsWindow)
 ipcMain.handle('get-settings', () => loadSettings())
+ipcMain.handle('test-github', () => testGitHubConnection())
+
+// GitHub Device Flow
+let deviceFlowTimer: NodeJS.Timeout | null = null
+
+ipcMain.handle('github-device-start', async () => {
+  try {
+    const flow = await startDeviceFlow()
+    shell.openExternal(flow.verification_uri)
+
+    // Poll every `interval` seconds for the token
+    const poll = async () => {
+      try {
+        const token = await pollDeviceFlow(flow.device_code)
+        if (token) {
+          saveSettings({ githubToken: token })
+          resetGitHubCache()
+          settingsWindow?.webContents.send('github-connected')
+          deviceFlowTimer = null
+        } else {
+          deviceFlowTimer = setTimeout(poll, flow.interval * 1000)
+        }
+      } catch (e: any) {
+        settingsWindow?.webContents.send('github-auth-error', e.message)
+        deviceFlowTimer = null
+      }
+    }
+    deviceFlowTimer = setTimeout(poll, flow.interval * 1000)
+
+    return { user_code: flow.user_code, verification_uri: flow.verification_uri }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+})
+
+ipcMain.on('github-device-cancel', () => {
+  if (deviceFlowTimer) { clearTimeout(deviceFlowTimer); deviceFlowTimer = null }
+})
+
+ipcMain.on('github-disconnect', () => {
+  if (deviceFlowTimer) { clearTimeout(deviceFlowTimer); deviceFlowTimer = null }
+  saveSettings({ githubToken: '' })
+  resetGitHubCache()
+})
 
 ipcMain.on('save-settings', (_event, patch: Record<string, unknown>) => {
   saveSettings(patch)

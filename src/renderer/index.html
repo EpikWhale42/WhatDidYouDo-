@@ -263,6 +263,55 @@
       box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 20%, transparent);
     }
 
+    /* ── Markdown answer display ── */
+    .answer-display {
+      flex: 1 1 0;
+      min-height: 0;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 9px 12px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .answer-display.visible { display: block; }
+
+    .answer-display h1,
+    .answer-display h2,
+    .answer-display h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 6px 0 2px;
+      color: var(--text-primary);
+    }
+
+    .answer-display p { margin: 0 0 5px; }
+    .answer-display p:last-child { margin-bottom: 0; }
+
+    .answer-display ul,
+    .answer-display ol {
+      margin: 2px 0 6px;
+      padding-left: 18px;
+    }
+
+    .answer-display li { margin: 3px 0; }
+
+    .answer-display strong { font-weight: 600; }
+    .answer-display em     { font-style: italic; }
+
+    .answer-display code {
+      font-family: -apple-system-ui-monospace, 'SF Mono', monospace;
+      font-size: 11px;
+      background: var(--btn-secondary);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
     /* ── Skeleton shimmer ── */
     @keyframes shimmer {
       0%   { background-position: -600px 0; }
@@ -386,6 +435,7 @@
       id="input"
       placeholder="e.g. Fixed the auth bug, reviewed two PRs, synced with design..."
     ></textarea>
+    <div class="answer-display" id="answer-display"></div>
     <div class="skeleton-wrap" id="skeleton">
       <div class="skeleton-line" style="width: 82%"></div>
       <div class="skeleton-line" style="width: 55%"></div>
