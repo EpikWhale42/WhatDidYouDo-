@@ -8,7 +8,7 @@ import {
 } from 'electron'
 import * as fs from 'fs'
 import * as os from 'os'
-import { generateQuestion, processResponse, getAgentLogPath } from './ai'
+import { generateQuestion, processResponse, getAgentLogPath, answerQuery, summarizeLogs } from './ai'
 import { loadSettings, saveSettings } from './settings'
 
 let tray: Tray | null = null
@@ -218,6 +218,16 @@ ipcMain.on('submit-checkin', async (_event, text: string) => {
 ipcMain.on('dismiss-window', () => {
   checkinWindow?.close()
   settingsWindow?.close()
+})
+
+ipcMain.on('ask-query', async (_event, query: string) => {
+  const answer = await answerQuery(query)
+  checkinWindow?.webContents.send('set-answer', answer)
+})
+
+ipcMain.on('summarize-query', async (_event, hours: number | undefined) => {
+  const summary = await summarizeLogs(hours)
+  checkinWindow?.webContents.send('set-answer', summary)
 })
 
 ipcMain.on('open-settings', openSettingsWindow)

@@ -18,6 +18,7 @@
       --btn-secondary-text: rgba(0, 0, 0, 0.55);
       --accent:          #007AFF;
       --drag-handle:     rgba(0, 0, 0, 0.12);
+      --popup-bg:        rgba(246, 246, 248, 0.98);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -34,6 +35,7 @@
         --btn-secondary-text: rgba(255, 255, 255, 0.50);
         --accent:          #0A84FF;
         --drag-handle:     rgba(255, 255, 255, 0.15);
+        --popup-bg:        rgba(30, 30, 32, 0.98);
       }
     }
 
@@ -124,15 +126,121 @@
       flex-shrink: 0;
     }
 
+    /* ── Command chip (ask mode indicator) ── */
+    .cmd-chip-row {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .cmd-chip-row.visible { display: flex; }
+
+    .cmd-chip {
+      display: inline-flex;
+      align-items: center;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      letter-spacing: -0.1px;
+      font-family: -apple-system-ui-monospace, 'SF Mono', monospace;
+    }
+
+    .cmd-chip-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .cmd-chip-x {
+      -webkit-app-region: no-drag;
+      background: none;
+      border: none;
+      color: var(--text-hint);
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 300;
+      letter-spacing: 0;
+      margin-left: auto;
+      transition: color 0.1s, background 0.1s;
+    }
+
+    .cmd-chip-x:hover { color: var(--text-secondary); background: var(--btn-secondary); }
+
+    /* ── Sigil picker ── */
+    .sigil-menu {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 18px;
+      right: 18px;
+      background: var(--popup-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+      z-index: 100;
+      -webkit-app-region: no-drag;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .sigil-menu.visible { display: block; }
+
+    .sigil-header {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-hint);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 9px 12px 4px;
+    }
+
+    .sigil-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px 10px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .sigil-item:hover { background: var(--input-bg); }
+
+    .sigil-name {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 13px;
+      font-family: -apple-system-ui-monospace, 'SF Mono', monospace;
+      min-width: 52px;
+    }
+
+    .sigil-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
     /* ── Textarea ── */
     .input-wrap {
       flex: 1;
       padding: 10px 18px;
       display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      min-height: 0;
     }
 
     textarea {
-      flex: 1;
+      flex: 1 1 0;
+      min-height: 0;
       background: var(--input-bg);
       border: 1px solid var(--input-border);
       border-radius: 8px;
@@ -153,6 +261,55 @@
       background: var(--input-bg-focus);
       border-color: var(--accent);
       box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    /* ── Skeleton shimmer ── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position:  600px 0; }
+    }
+
+    .skeleton-wrap {
+      flex: 1 1 0;
+      min-height: 0;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 14px 12px;
+      display: none;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .skeleton-wrap.visible { display: flex; }
+
+    .skeleton-line {
+      height: 13px;
+      border-radius: 6px;
+      background: linear-gradient(
+        90deg,
+        var(--shimmer-a)  0%,
+        var(--shimmer-b) 50%,
+        var(--shimmer-a) 100%
+      );
+      background-size: 600px 100%;
+      animation: shimmer 1.6s ease-in-out infinite;
+    }
+
+    .skeleton-line:nth-child(2) { animation-delay: 0.15s; }
+    .skeleton-line:nth-child(3) { animation-delay: 0.30s; }
+    .skeleton-line:nth-child(4) { animation-delay: 0.45s; }
+
+    :root {
+      --shimmer-a: rgba(0, 0, 0, 0.06);
+      --shimmer-b: rgba(0, 0, 0, 0.13);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --shimmer-a: rgba(255, 255, 255, 0.05);
+        --shimmer-b: rgba(255, 255, 255, 0.13);
+      }
     }
 
     /* ── Actions ── */
@@ -210,7 +367,7 @@
     <img src="../assets/icon.png" alt="icon" />
     <div class="header-text">
       <h1 id="question">What did you do in the last hour?</h1>
-      <div class="subtitle">Saved to your daily log.</div>
+      <div class="subtitle" id="subtitle">Saved to your daily log.</div>
     </div>
     <button class="btn-settings" id="settings" title="Settings">
       <span class="btn-settings-icon">⚙︎</span>
@@ -220,10 +377,32 @@
   <div class="divider"></div>
 
   <div class="input-wrap">
+    <div class="cmd-chip-row" id="cmd-chip-row">
+      <span class="cmd-chip">/ask</span>
+      <span class="cmd-chip-label">search mode — type your question</span>
+      <button class="cmd-chip-x" id="cmd-chip-x" title="Cancel">✕</button>
+    </div>
     <textarea
       id="input"
       placeholder="e.g. Fixed the auth bug, reviewed two PRs, synced with design..."
     ></textarea>
+    <div class="skeleton-wrap" id="skeleton">
+      <div class="skeleton-line" style="width: 82%"></div>
+      <div class="skeleton-line" style="width: 55%"></div>
+      <div class="skeleton-line" style="width: 71%"></div>
+      <div class="skeleton-line" style="width: 38%"></div>
+    </div>
+    <div class="sigil-menu" id="sigil-menu">
+      <div class="sigil-header">Commands</div>
+      <div class="sigil-item" data-sigil="ask">
+        <span class="sigil-name">/ask</span>
+        <span class="sigil-desc">Search your logs with a question</span>
+      </div>
+      <div class="sigil-item" data-sigil="summary">
+        <span class="sigil-name">/summary</span>
+        <span class="sigil-desc">Summarize today · or /summary 3 for last 3 hours</span>
+      </div>
+    </div>
   </div>
 
   <div class="actions">

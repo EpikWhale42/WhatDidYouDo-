@@ -5,6 +5,73 @@ import { loadSettings } from './settings'
 
 const LOG_DIR = path.join(os.homedir(), 'Documents', 'WhatDidYouDo-Logs')
 
+function readRecentLogs(days = 30): string {
+  const entries: string[] = []
+  for (let i = 0; i < days; i++) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    const dateStr = date.toISOString().split('T')[0]
+    const userLog = path.join(LOG_DIR, `${dateStr}.md`)
+    const agentLog = path.join(LOG_DIR, `agent-${dateStr}.md`)
+    if (fs.existsSync(userLog))  entries.push(fs.readFileSync(userLog, 'utf8'))
+    if (fs.existsSync(agentLog)) entries.push(fs.readFileSync(agentLog, 'utf8'))
+  }
+  return entries.join('\n\n---\n\n')
+}
+
+export async function summarizeLogs(hours?: number): Promise<string> {
+  const logs = readRecentLogs(hours ? Math.ceil(hours / 24) + 1 : 1)
+  if (!logs.trim()) return "No logs found yet. Answer a few check-ins first."
+
+  const now = new Date()
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const scope = hours
+    ? `the last ${hours} hour${hours === 1 ? '' : 's'} (current time: ${timeStr})`
+    : `today so far (current time: ${timeStr})`
+
+  const system = `You are a personal productivity assistant. Summarize the user's work for ${scope} based on their logs.
+
+Format as a concise standup-style bullet list:
+• What was completed
+• What's still in progress
+• Any blockers or next steps (only if mentioned)
+
+Use the actual task names from the logs. 3–6 bullets max. No preamble or sign-off.`
+
+  try {
+    const summary = await callOpenRouter([
+      { role: 'system', content: system },
+      { role: 'user', content: `Logs:\n${logs}` },
+    ], 350)
+    return summary.trim()
+  } catch (e) {
+    console.error('summarizeLogs failed:', e)
+    return 'Something went wrong while summarizing. Check your API key in Settings.'
+  }
+}
+
+export async function answerQuery(question: string): Promise<string> {
+  const logs = readRecentLogs(30)
+  if (!logs.trim()) return "I don't have any logs to search yet. Answer a few check-ins first."
+
+  const system = `You are a personal memory assistant. You have access to the user's work logs from the past 30 days — both their own words and structured agent notes.
+
+Answer the user's question based only on what's in the logs. Be specific: mention dates and times when relevant. If the logs don't contain enough information to answer, say so honestly.
+
+Keep your answer concise and direct. No preamble.`
+
+  try {
+    const answer = await callOpenRouter([
+      { role: 'system', content: system },
+      { role: 'user', content: `Logs:\n${logs}\n\nQuestion: ${question}` },
+    ], 400)
+    return answer.trim()
+  } catch (e) {
+    console.error('answerQuery failed:', e)
+    return 'Something went wrong while searching your logs. Check your API key in Settings.'
+  }
+}
+
 export function getAgentLogPath(): string {
   const today = new Date().toISOString().split('T')[0]
   return path.join(LOG_DIR, `agent-${today}.md`)
