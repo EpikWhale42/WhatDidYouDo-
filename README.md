@@ -8,6 +8,9 @@ This app is built around one simple belief: **the tool should come to you, not t
 
 ---
 
+<img width="577" height="369" alt="image" src="https://github.com/user-attachments/assets/5318cd28-c70a-4018-acba-d3b2359c9a48" />
+
+
 ## The idea
 
 Every hour, a small window appears on your screen — right on top of whatever you're doing — and asks one question:
