@@ -65,7 +65,7 @@ function makeWindow(opts: Electron.BrowserWindowConstructorOptions): BrowserWind
     resizable: false,
     alwaysOnTop: true,
     center: true,
-    frame: false,
+    titleBarStyle: 'hiddenInset',
     transparent: true,
     vibrancy: 'under-window',
     visualEffectState: 'active',
@@ -84,7 +84,7 @@ async function openCheckinWindow() {
     return
   }
 
-  checkinWindow = makeWindow({ width: 520, height: 320 })
+  checkinWindow = makeWindow({ width: 620, height: 460 })
   checkinWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'))
 
   checkinWindow.webContents.on('did-finish-load', async () => {
@@ -118,7 +118,7 @@ function openSettingsWindow() {
     settingsWindow.focus()
     return
   }
-  settingsWindow = makeWindow({ width: 420, height: 370 })
+  settingsWindow = makeWindow({ width: 460, height: 400 })
   settingsWindow.loadFile(path.join(__dirname, 'renderer', 'settings.html'))
   settingsWindow.on('closed', () => { settingsWindow = null })
 }

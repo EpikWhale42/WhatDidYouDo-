@@ -55,22 +55,13 @@
       overflow: hidden;
     }
 
-    /* ── Drag handle ── */
-    .drag-handle {
-      width: 32px;
-      height: 3px;
-      background: var(--drag-handle);
-      border-radius: 2px;
-      margin: 10px auto 0;
-      flex-shrink: 0;
-    }
-
     /* ── Header ── */
     .header {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 18px 10px;
+      padding: 16px 18px 10px;
+      padding-top: 44px; /* clear the native traffic light buttons */
       flex-shrink: 0;
     }
 
@@ -215,8 +206,6 @@
   </style>
 </head>
 <body>
-  <div class="drag-handle"></div>
-
   <div class="header">
     <img src="../assets/icon.png" alt="icon" />
     <div class="header-text">
