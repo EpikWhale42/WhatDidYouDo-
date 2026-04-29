@@ -1,0 +1,41 @@
+{
+  "name": "what-did-you-do",
+  "version": "0.1.0",
+  "description": "Proactive activity tracker — asks what you did, every hour",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc && cp src/renderer/index.html dist/renderer/index.html && cp src/renderer/settings.html dist/renderer/settings.html && cp -r assets dist/",
+    "dev": "npm run build && electron .",
+    "watch": "tsc -w",
+    "package": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^20.0.0",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.whatdidyoudo.app",
+    "productName": "What Did You Do",
+    "icon": "assets/icon.png",
+    "files": [
+      "dist/**/*"
+    ],
+    "extraResources": [
+      { "from": "assets", "to": "assets" }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "identity": null
+    },
+    "dmg": {
+      "title": "What Did You Do"
+    }
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

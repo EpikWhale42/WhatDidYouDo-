@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What Did You Do?</title>
+  <style>
+    :root {
+      --text-primary:    rgba(0, 0, 0, 0.85);
+      --text-secondary:  rgba(0, 0, 0, 0.40);
+      --text-hint:       rgba(0, 0, 0, 0.22);
+      --input-bg:        rgba(0, 0, 0, 0.04);
+      --input-bg-focus:  rgba(0, 0, 0, 0.06);
+      --input-border:    rgba(0, 0, 0, 0.12);
+      --separator:       rgba(0, 0, 0, 0.08);
+      --btn-secondary:   rgba(0, 0, 0, 0.06);
+      --btn-secondary-hover: rgba(0, 0, 0, 0.10);
+      --btn-secondary-text: rgba(0, 0, 0, 0.55);
+      --accent:          #007AFF;
+      --drag-handle:     rgba(0, 0, 0, 0.12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-primary:    rgba(255, 255, 255, 0.88);
+        --text-secondary:  rgba(255, 255, 255, 0.42);
+        --text-hint:       rgba(255, 255, 255, 0.20);
+        --input-bg:        rgba(255, 255, 255, 0.06);
+        --input-bg-focus:  rgba(255, 255, 255, 0.09);
+        --input-border:    rgba(255, 255, 255, 0.10);
+        --separator:       rgba(255, 255, 255, 0.08);
+        --btn-secondary:   rgba(255, 255, 255, 0.07);
+        --btn-secondary-hover: rgba(255, 255, 255, 0.12);
+        --btn-secondary-text: rgba(255, 255, 255, 0.50);
+        --accent:          #0A84FF;
+        --drag-handle:     rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-app-region: drag;
+      overflow: hidden;
+    }
+
+    /* ── Drag handle ── */
+    .drag-handle {
+      width: 32px;
+      height: 3px;
+      background: var(--drag-handle);
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px 10px;
+      flex-shrink: 0;
+    }
+
+    .header img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .header-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-text h1 {
+      font-size: 13px;
+      font-weight: 590;
+      letter-spacing: -0.1px;
+      line-height: 1.35;
+      color: var(--text-primary);
+    }
+
+    .header-text .subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 1px;
+      font-weight: 400;
+    }
+
+    .btn-settings {
+      -webkit-app-region: no-drag;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      align-self: flex-start;
+      transition: color 0.15s, background 0.15s;
+      color: var(--text-secondary);
+    }
+
+    .btn-settings-icon {
+      font-size: 14px;
+      line-height: 1;
+      display: block;
+    }
+
+    .btn-settings:hover {
+      opacity: 0.7;
+      background: var(--btn-secondary);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--separator);
+      margin: 0 18px;
+      flex-shrink: 0;
+    }
+
+    /* ── Textarea ── */
+    .input-wrap {
+      flex: 1;
+      padding: 10px 18px;
+      display: flex;
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 9px 11px;
+      resize: none;
+      outline: none;
+      -webkit-app-region: no-drag;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    textarea::placeholder { color: var(--text-hint); }
+
+    textarea:focus {
+      background: var(--input-bg-focus);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+
+    /* ── Actions ── */
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px 14px;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .hint {
+      font-size: 10px;
+      color: var(--text-hint);
+      letter-spacing: 0.1px;
+    }
+
+    .btns {
+      display: flex;
+      gap: 7px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      padding: 6px 14px;
+      transition: filter 0.1s;
+      letter-spacing: -0.1px;
+    }
+
+    button:active { filter: brightness(0.88); }
+
+    .btn-skip {
+      background: var(--btn-secondary);
+      color: var(--btn-secondary-text);
+    }
+
+    .btn-skip:hover { background: var(--btn-secondary-hover); }
+
+    .btn-log {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-log:hover { filter: brightness(1.08); }
+  </style>
+</head>
+<body>
+  <div class="drag-handle"></div>
+
+  <div class="header">
+    <img src="../assets/icon.png" alt="icon" />
+    <div class="header-text">
+      <h1 id="question">What did you do in the last hour?</h1>
+      <div class="subtitle">Saved to your daily log.</div>
+    </div>
+    <button class="btn-settings" id="settings" title="Settings">
+      <span class="btn-settings-icon">⚙︎</span>
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="input-wrap">
+    <textarea
+      id="input"
+      placeholder="e.g. Fixed the auth bug, reviewed two PRs, synced with design..."
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <span class="hint">⌘↵ submit &nbsp;·&nbsp; Esc skip</span>
+    <div class="btns">
+      <button class="btn-skip" id="dismiss">Skip</button>
+      <button class="btn-log"  id="submit">Log it</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
