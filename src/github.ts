@@ -201,9 +201,13 @@ export interface DeviceFlowStart {
   interval: number
 }
 
+// Public OAuth App client ID — not a secret, device flow requires no client_secret.
+// Override with GITHUB_CLIENT_ID in .env for local development with a different app.
+const OAUTH_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'Ov23liEB1J0TDtLvSuwa' // We can use the same public client for everyone
+
 export async function startDeviceFlow(): Promise<DeviceFlowStart> {
-  const clientId = process.env.GITHUB_CLIENT_ID
-  if (!clientId) throw new Error('GITHUB_CLIENT_ID not set in .env')
+  const clientId = OAUTH_CLIENT_ID
+  if (!clientId || clientId === 'YOUR_CLIENT_ID_HERE') throw new Error('GitHub OAuth App not configured. Set GITHUB_CLIENT_ID in .env or replace the placeholder in github.ts')
 
   const res = await fetch('https://github.com/login/device/code', {
     method: 'POST',
@@ -224,8 +228,7 @@ export async function startDeviceFlow(): Promise<DeviceFlowStart> {
 
 // Returns token string when authorized, null when still pending, throws on expiry/error
 export async function pollDeviceFlow(deviceCode: string): Promise<string | null> {
-  const clientId = process.env.GITHUB_CLIENT_ID
-  if (!clientId) throw new Error('GITHUB_CLIENT_ID not set in .env')
+  const clientId = OAUTH_CLIENT_ID
 
   const res = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
